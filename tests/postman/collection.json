@@ -1,0 +1,184 @@
+{
+  "info": {
+    "name": "Task_1 API Tests",
+    "_postman_id": "12345",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login Success",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/login",
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"password123\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Response JSON has success status\", function () {",
+              "    pm.expect(jsonData.status).to.eql(\"success\");",
+              "});",
+              "pm.test(\"Response contains a token\", function () {",
+              "    pm.expect(jsonData).to.have.property(\"token\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Failure",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/login",
+        "body": { "mode": "raw", "raw": "{\"username\":\"wrong\",\"password\":\"bad\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "pm.test(\"Response contains Invalid credentials\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Invalid credentials\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Missing Username",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/login",
+        "body": { "mode": "raw", "raw": "{\"username\":\"\",\"password\":\"password123\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Response contains Username required\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Username required\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Missing Password",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/login",
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Response contains Password required\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Password required\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected Route with Invalid Token",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/protected",
+        "header": [{ "key": "Authorization", "value": "Bearer invalid-token" }]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "pm.test(\"Response contains Invalid or expired token\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Invalid or expired token\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+    "name": "Moderate Clean Text",
+    "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/moderate",
+      "header": [{ "key": "Content-Type", "value": "application/json" }],
+      "body": { "mode": "raw", "raw": "{\"text\":\"You are a wonderful person!\"}" }
+    },
+    "event": [
+      {
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Moderate clean text should be non-toxic\", function () {",
+            "    pm.response.to.have.status(200);",
+            "    var data = pm.response.json();",
+            "    pm.expect(data).to.have.property(\"toxicity\");",
+            "    pm.expect(data.toxicity).to.eql(\"non-toxic\");",
+            "    pm.expect(data).to.have.property(\"toxicity_scores\");",
+            "    pm.expect(data.toxicity_scores.toxicity).to.be.below(0.5);",
+            "});"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "Moderate Toxic Text",
+    "request": {
+      "method": "POST",
+      "url": "{{base_url}}/api/moderate",
+      "header": [{ "key": "Content-Type", "value": "application/json" }],
+      "body": { "mode": "raw", "raw": "{\"text\":\"You are stupid and ugly!\"}" }
+    },
+    "event": [
+      {
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test(\"Moderate toxic text should be flagged\", function () {",
+            "    pm.response.to.have.status(200);",
+            "    var data = pm.response.json();",
+            "    pm.expect(data).to.have.property(\"toxicity\");",
+            "    pm.expect(data.toxicity).to.eql(\"toxic\");",
+            "    pm.expect(data).to.have.property(\"toxicity_scores\");",
+            "    pm.expect(data.toxicity_scores.toxicity).to.be.above(0.5);",
+            "});"
+          ]
+        }
+      }
+    ]
+  }
+  ]
+}

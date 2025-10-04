@@ -1,0 +1,17 @@
+# Core dependencies (already have some)
+fastapi
+uvicorn
+streamlit
+requests
+pytest
+playwright
+detoxify
+torch
+
+# ollama
+ollama
+requests
+
+# groqcloud
+python-dotenv
+pytest-html
