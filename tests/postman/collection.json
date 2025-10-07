@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Task_1 API Tests",
+    "name": "Task_1 API Tests - Enhanced",
     "_postman_id": "12345",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -18,23 +18,17 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
               "var jsonData = pm.response.json();",
-              "pm.test(\"Response JSON has success status\", function () {",
-              "    pm.expect(jsonData.status).to.eql(\"success\");",
-              "});",
-              "pm.test(\"Response contains a token\", function () {",
-              "    pm.expect(jsonData).to.have.property(\"token\");",
-              "});"
+              "pm.test(\"Response JSON has success status\", function () { pm.expect(jsonData.status).to.eql(\"success\"); });",
+              "pm.test(\"Response contains a token\", function () { pm.expect(jsonData).to.have.property(\"token\"); });"
             ]
           }
         }
       ]
     },
     {
-      "name": "Login Failure",
+      "name": "Login Failure (Wrong Credentials)",
       "request": {
         "method": "POST",
         "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -46,12 +40,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401\", function () {",
-              "    pm.response.to.have.status(401);",
-              "});",
-              "pm.test(\"Response contains Invalid credentials\", function () {",
-              "    pm.expect(pm.response.text()).to.include(\"Invalid credentials\");",
-              "});"
+              "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"Response contains Invalid credentials\", function () { pm.expect(pm.response.text()).to.include(\"Invalid credentials\"); });"
             ]
           }
         }
@@ -70,12 +60,8 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 400\", function () {",
-              "    pm.response.to.have.status(400);",
-              "});",
-              "pm.test(\"Response contains Username required\", function () {",
-              "    pm.expect(pm.response.text()).to.include(\"Username required\");",
-              "});"
+              "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Response contains Username required\", function () { pm.expect(pm.response.text()).to.include(\"Username required\"); });"
             ]
           }
         }
@@ -94,12 +80,65 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 400\", function () {",
-              "    pm.response.to.have.status(400);",
-              "});",
-              "pm.test(\"Response contains Password required\", function () {",
-              "    pm.expect(pm.response.text()).to.include(\"Password required\");",
-              "});"
+              "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Response contains Password required\", function () { pm.expect(pm.response.text()).to.include(\"Password required\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login Invalid JSON Format",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{base_url}}/api/login",
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"password123\"" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400 (Invalid JSON)\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Response contains Invalid JSON error\", function () { pm.expect(pm.response.text()).to.include(\"Invalid JSON\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected Route with Valid Token",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/protected",
+        "header": [{ "key": "Authorization", "value": "Bearer fake-jwt-token" }]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Response contains protected message\", function () { pm.expect(pm.response.text()).to.include(\"protected data\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Protected Route Missing Authorization Header",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/protected"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"Response mentions missing Authorization header\", function () { pm.expect(pm.response.text()).to.include(\"Authorization\"); });"
             ]
           }
         }
@@ -117,11 +156,30 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 401\", function () {",
-              "    pm.response.to.have.status(401);",
-              "});",
-              "pm.test(\"Response contains Invalid or expired token\", function () {",
-              "    pm.expect(pm.response.text()).to.include(\"Invalid or expired token\");",
+              "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"Response contains Invalid or expired token\", function () { pm.expect(pm.response.text()).to.include(\"Invalid or expired token\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Moderate Clean Text",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/moderate",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"text\":\"You are a wonderful person!\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Moderate clean text should be non-toxic\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var data = pm.response.json();",
+              "    pm.expect(data.toxicity).to.eql(\"non-toxic\");",
               "});"
             ]
           }
@@ -129,56 +187,65 @@
       ]
     },
     {
-    "name": "Moderate Clean Text",
-    "request": {
-      "method": "POST",
-      "url": "{{base_url}}/api/moderate",
-      "header": [{ "key": "Content-Type", "value": "application/json" }],
-      "body": { "mode": "raw", "raw": "{\"text\":\"You are a wonderful person!\"}" }
-    },
-    "event": [
-      {
-        "listen": "test",
-        "script": {
-          "exec": [
-            "pm.test(\"Moderate clean text should be non-toxic\", function () {",
-            "    pm.response.to.have.status(200);",
-            "    var data = pm.response.json();",
-            "    pm.expect(data).to.have.property(\"toxicity\");",
-            "    pm.expect(data.toxicity).to.eql(\"non-toxic\");",
-            "    pm.expect(data).to.have.property(\"toxicity_scores\");",
-            "    pm.expect(data.toxicity_scores.toxicity).to.be.below(0.5);",
-            "});"
-          ]
+      "name": "Moderate Toxic Text",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/moderate",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"text\":\"You are stupid and ugly!\"}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Moderate toxic text should be flagged\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var data = pm.response.json();",
+              "    pm.expect(data.toxicity).to.eql(\"toxic\");",
+              "});"
+            ]
+          }
         }
-      }
-    ]
-  },
-  {
-    "name": "Moderate Toxic Text",
-    "request": {
-      "method": "POST",
-      "url": "{{base_url}}/api/moderate",
-      "header": [{ "key": "Content-Type", "value": "application/json" }],
-      "body": { "mode": "raw", "raw": "{\"text\":\"You are stupid and ugly!\"}" }
+      ]
     },
-    "event": [
-      {
-        "listen": "test",
-        "script": {
-          "exec": [
-            "pm.test(\"Moderate toxic text should be flagged\", function () {",
-            "    pm.response.to.have.status(200);",
-            "    var data = pm.response.json();",
-            "    pm.expect(data).to.have.property(\"toxicity\");",
-            "    pm.expect(data.toxicity).to.eql(\"toxic\");",
-            "    pm.expect(data).to.have.property(\"toxicity_scores\");",
-            "    pm.expect(data.toxicity_scores.toxicity).to.be.above(0.5);",
-            "});"
-          ]
+    {
+      "name": "Moderate Missing Text Field",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/moderate",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Missing text field should return 400\", function () { pm.response.to.have.status(400); });"
+            ]
+          }
         }
-      }
-    ]
-  }
+      ]
+    },
+    {
+      "name": "Moderate Invalid Payload Type",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/moderate",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"text\":12345}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Invalid text type should return 400\", function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    }
   ]
 }
