@@ -80,8 +80,13 @@ def save_failure_report(test_name: str, layer: str, groq_result: str, ollama_res
     Save structured failure report for each test case.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = ARTIFACTS / f"{test_name.replace('/', '_')}_{timestamp}.md"
-
+    safe_name = (
+    test_name.replace("::", "__")
+    .replace(":", "_")
+    .replace("/", "_")
+    .replace("\\", "_")
+    )
+    filename = ARTIFACTS / f"{safe_name}_{timestamp}.md"
     content = f"""
 # 🧪 Failure Report: {test_name}
 **Layer:** {layer}  
