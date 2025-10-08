@@ -1,38 +1,45 @@
 Index,Test Name,Layer / Area,Tools That Ran This Test,Status
-1,Login Case Insensitive,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-2,Login Content Type Missing,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-3,Login Empty Body,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-4,Login Extra Invalid Input / Fields,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-5,Login Failure (Wrong Credentials),Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
-6,Login Failure Blank Password,Backend (Auth/API),✅ Playwright Login,✅ Passed
-7,Login Failure Blank Username,Backend (Auth/API),✅ Playwright Login,✅ Passed
-8,Login Failure Failure (Wrong Credentials) Credentials,Backend (Auth/API),✅ Playwright Login,✅ Passed
-9,Login Invalid Input,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
-10,Login Invalid Json Format,Backend (Auth/API),✅ Postman,✅ Passed
-11,Login Invalid Password,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-12,Login Missing Invalid Input / Fields,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
-13,Login Missing Password,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
-14,Login Missing Username,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
-15,Login Page Loads,Backend (Auth/API),✅ Playwright Login,✅ Passed
-16,Login Sql Injection,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-17,Login Success,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Playwright Login  ✅ Postman  ✅ Pytest (Login),✅ Passed
-18,Login Ui Multiple Attempts,Backend (Auth/API),✅ Playwright Login,✅ Passed
-19,Login Ui Refresh Persists State,Backend (Auth/API),✅ Playwright Login,✅ Passed
-20,Login Unknown User,Backend (Auth/API),✅ Pytest (Login),✅ Passed
-21,Logout Functionality,Frontend (UI),✅ Playwright Login,✅ Passed
-22,Moderate Clean Text,Backend (Toxicity / Model),✅ Postman  ✅ Pytest (Moderation),✅ Passed
-23,Moderate Empty Text,Backend (Toxicity / Model),✅ Groq  ✅ Ollama  ✅ Pytest (Moderation),✅ Passed
-24,Moderate Html Tags,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
-25,Moderate Invalid Payload Type,Backend (Toxicity / Model),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
-26,Moderate Missing Text Field,Backend (Toxicity / Model),✅ Postman,✅ Passed
-27,Moderate Numeric Text,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
-28,Moderate Special Characters,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
-29,Moderate Toxic Text,Backend (Toxicity / Model),✅ Postman  ✅ Pytest (Moderation),✅ Passed
-30,Moderate With Success Text,Backend (Toxicity / Model),✅ Groq  ✅ Ollama,✅ Passed
-31,Protected Expired Token,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
-32,Protected Missing Auth Header,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
-33,Protected Route Missing Authorization Header,Backend (Auth/API),✅ Postman,✅ Passed
-34,Protected Route With Invalid Token,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Playwright Login  ✅ Postman,✅ Passed
-35,Protected Route With Success Token,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
-36,Streamlit Content Moderation,Misc,✅ Playwright Streamlit,✅ Passed
-37,Streamlit Insights,Misc,✅ Playwright Streamlit,✅ Passed
+1,Detailed Section Visibility,Misc,✅ Playwright Streamlit,✅ Passed
+2,Dropdown Availability,Misc,✅ Playwright Streamlit,✅ Passed
+3,Empty Input Warning,Misc,✅ Playwright Streamlit,✅ Passed
+4,Failed Count Metric,Misc,✅ Playwright Streamlit,✅ Passed
+5,Login Case Insensitive,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+6,Login Content Type Missing,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+7,Login Empty Body,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+8,Login Extra Invalid Input / Fields,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+9,Login Failure (Wrong Credentials),Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
+10,Login Failure Blank Password,Backend (Auth/API),✅ Playwright Login,✅ Passed
+11,Login Failure Blank Username,Backend (Auth/API),✅ Playwright Login,✅ Passed
+12,Login Failure Failure (Wrong Credentials) Credentials,Backend (Auth/API),✅ Playwright Login,✅ Passed
+13,Login Invalid Input,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
+14,Login Invalid Json Format,Backend (Auth/API),✅ Postman,✅ Passed
+15,Login Invalid Password,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+16,Login Missing Invalid Input / Fields,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
+17,Login Missing Password,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
+18,Login Missing Username,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
+19,Login Page Loads,Backend (Auth/API),✅ Playwright Login,✅ Passed
+20,Login Sql Injection,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+21,Login Success,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Playwright Login  ✅ Postman  ✅ Pytest (Login),✅ Passed
+22,Login Ui Multiple Attempts,Backend (Auth/API),✅ Playwright Login,✅ Passed
+23,Login Ui Refresh Persists State,Backend (Auth/API),✅ Playwright Login,✅ Passed
+24,Login Unknown User,Backend (Auth/API),✅ Pytest (Login),✅ Passed
+25,Logout Functionality,Frontend (UI),✅ Playwright Login,✅ Passed
+26,Moderate Clean Text,Backend (Toxicity / Model),✅ Postman  ✅ Pytest (Moderation),✅ Passed
+27,Moderate Empty Text,Backend (Toxicity / Model),✅ Groq  ✅ Ollama  ✅ Pytest (Moderation),✅ Passed
+28,Moderate Html Tags,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
+29,Moderate Invalid Payload Type,Backend (Toxicity / Model),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
+30,Moderate Missing Text Field,Backend (Toxicity / Model),✅ Postman,✅ Passed
+31,Moderate Numeric Text,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
+32,Moderate Special Characters,Backend (Toxicity / Model),✅ Pytest (Moderation),✅ Passed
+33,Moderate Toxic Text,Backend (Toxicity / Model),✅ Postman  ✅ Pytest (Moderation),✅ Passed
+34,Moderate With Success Text,Backend (Toxicity / Model),✅ Groq  ✅ Ollama,✅ Passed
+35,Passed Count Metric,Misc,✅ Playwright Streamlit,✅ Passed
+36,Protected Expired Token,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
+37,Protected Missing Auth Header,Backend (Auth/API),✅ Groq  ✅ Ollama,✅ Passed
+38,Protected Route Missing Authorization Header,Backend (Auth/API),✅ Postman,✅ Passed
+39,Protected Route With Invalid Token,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Playwright Login  ✅ Postman,✅ Passed
+40,Protected Route With Success Token,Backend (Auth/API),✅ Groq  ✅ Ollama  ✅ Postman,✅ Passed
+41,Tools Column Present,Misc,✅ Playwright Streamlit,✅ Passed
+42,Total Count Display,Misc,✅ Playwright Streamlit,✅ Passed
+43,Toxic Input Detection,Misc,✅ Playwright Streamlit,✅ Passed
+44,Unified Table Presence,Misc,✅ Playwright Streamlit,✅ Passed
