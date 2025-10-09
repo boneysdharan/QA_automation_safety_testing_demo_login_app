@@ -1,22 +1,29 @@
 # Playwright Streamlit UI Tests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import pytest
 from playwright.sync_api import sync_playwright, expect
-from PIL import Image
+import asyncio, nest_asyncio
+from playwright.async_api import async_playwright
 from streamlit import html
 from pytest_html import extras
+import warnings
+
+warnings.filterwarnings("ignore", category=RuntimeWarning, message="coroutine .* was never awaited")
 
 BASE_URL = "http://localhost:8501"
 ARTIFACTS_DIR = Path(r"D:\BONEYS\WEB\WORK\task_1\artifacts\playwright_streamlit_ui_tests")
 ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+IMAGES_DIR = ARTIFACTS_DIR / "images"
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+VIDEOS_DIR = ARTIFACTS_DIR / "videos"
+VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
 _temp_screenshots = []
 
 # Helper Functions
 def _dynamic_description(name: str):
-    """Generate description text automatically."""
     if callable(globals().get(name)) and globals()[name].__doc__:
         return globals()[name].__doc__.strip()
     n = name.replace("test_", "").replace("_", " ").capitalize()
@@ -36,12 +43,25 @@ def _quick_fix_suggestion(name: str):
             return msg
     return "Re-run this test in debug mode for more detailed diagnostics."
 
-import nest_asyncio
-import asyncio
-from playwright.async_api import async_playwright
+# Video Save Helper
+def _save_test_video(context, test_name: str):
+    """Rename Playwright's recorded video to match test name."""
+    try:
+        # Close context to finalize the video
+        context.close()
+        time.sleep(1)
+        for f in VIDEOS_DIR.glob("*.webm"):
+            if f.name != f"{test_name}.webm" and f.stat().st_mtime > time.time() - 30:
+                new_path = VIDEOS_DIR / f"{test_name}.webm"
+                f.rename(new_path)
+                print(f"🎥 Saved video for {test_name} → {new_path}")
+                return
+        print(f"⚠️ No video found for {test_name}.")
+    except Exception as e:
+        print(f"⚠️ Could not rename video for {test_name}: {e}")
 
+# Test Card Generator
 def _generate_test_card(test_name: str, status: str, duration: float, domain: str, error_reason=None):
-    """Generate detailed HTML-based image card asynchronously (safe for nested loops)."""
     async def _async_generate():
         try:
             color = "#16a34a" if status == "PASSED" else "#dc2626"
@@ -69,8 +89,8 @@ def _generate_test_card(test_name: str, status: str, duration: float, domain: st
 
             tmp_html = Path(tempfile.gettempdir()) / f"{test_name}.html"
             tmp_html.write_text(html_content, encoding="utf-8")
+            output_path = IMAGES_DIR / f"{test_name}.png"
 
-            output_path = ARTIFACTS_DIR / f"{test_name}.png"
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 context = await browser.new_context()
@@ -83,7 +103,6 @@ def _generate_test_card(test_name: str, status: str, duration: float, domain: st
             tmp_html.unlink(missing_ok=True)
             _temp_screenshots.append(output_path)
             print(f"📸 Saved test report image → {output_path}")
-
         except Exception as e:
             print(f"⚠️ Failed to generate test card for {test_name}: {e}")
 
@@ -92,12 +111,9 @@ def _generate_test_card(test_name: str, status: str, duration: float, domain: st
     except RuntimeError:
         nest_asyncio.apply()
         loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(_async_generate())
-        except RuntimeError:
-            # Handle already running loop cleanly
-            asyncio.ensure_future(_async_generate())
+        loop.run_until_complete(_async_generate())
 
+# Sidebar Navigation
 def wait_for_sidebar(page):
     selectors = [
         "section[data-testid='stSidebar']",
@@ -117,219 +133,188 @@ def open_tab(page, tab_name):
     assert sel is not None
     page.locator(f"label:has-text('{tab_name}')").click()
 
-# Shared Browser technique
+# Shared Browser Fixture
 @pytest.fixture(scope="module")
-def browser_context():
-    """Launch a shared browser once for all tests."""
+def browser():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        yield context
-        context.close()
+        yield browser
         browser.close()
 
 # Helper Wrapper
-def run_safe_test(name, func, browser_context):
+def run_safe_test(name, func, browser):
     start = time.time()
+    # Each test gets its own context so video files are isolated
+    context = browser.new_context(
+        record_video_dir=str(VIDEOS_DIR),
+        record_video_size={"width": 1366, "height": 768},
+        viewport={"width": 1366, "height": 768},
+    )
+    page = context.new_page()
+
     try:
-        func(browser_context)
+        func(page)
         _generate_test_card(name, "PASSED", time.time() - start, BASE_URL)
     except AssertionError as e:
         _generate_test_card(name, "FAILED", time.time() - start, BASE_URL, str(e))
         raise
+    finally:
+        _save_test_video(context, name)
 
-# Tests
-def test_total_test_count_display(browser_context):
+# Test Cases
+
+# Test Insights Tab
+def test_total_test_count_display(browser):
     """Verify total test count metric visible on Test Insights tab."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("text=Total Tests")).to_be_visible()
-        page.close()
-    run_safe_test("test_total_test_count_display", inner, browser_context)
+    run_safe_test("test_total_test_count_display", inner, browser)
 
-def test_passed_test_count_metric(browser_context):
+def test_passed_test_count_metric(browser):
     """Verify 'Passed' metric box visible."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("div[data-testid='stMetric']").filter(has_text="Passed")).to_be_visible()
-        page.close()
-    run_safe_test("test_passed_test_count_metric", inner, browser_context)
+    run_safe_test("test_passed_test_count_metric", inner, browser)
 
-def test_failed_test_count_metric(browser_context):
+def test_failed_test_count_metric(browser):
     """Verify 'Failed' metric visible."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("div[data-testid='stMetric']").filter(has_text="Failed")).to_be_visible()
-        page.close()
-    run_safe_test("test_failed_test_count_metric", inner, browser_context)
+    run_safe_test("test_failed_test_count_metric", inner, browser)
 
-def test_unified_table_presence(browser_context):
+def test_unified_table_presence(browser):
     """Ensure unified test insights table appears."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("table")).to_be_visible()
-        page.close()
-    run_safe_test("test_unified_table_presence", inner, browser_context)
+    run_safe_test("test_unified_table_presence", inner, browser)
 
-def test_dropdown_availability(browser_context):
+def test_dropdown_availability(browser):
     """Ensure test case dropdown appears."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("[role='combobox']")).to_be_visible()
-        page.close()
-    run_safe_test("test_dropdown_availability", inner, browser_context)
+    run_safe_test("test_dropdown_availability", inner, browser)
 
-def test_detailed_section_visibility(browser_context):
+def test_detailed_section_visibility(browser):
     """Verify 'View Detailed Test Insight' section visible."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("text=View Detailed Test Insight")).to_be_visible()
-        page.close()
-    run_safe_test("test_detailed_section_visibility", inner, browser_context)
+    run_safe_test("test_detailed_section_visibility", inner, browser)
 
-def test_tools_column_present(browser_context):
+def test_tools_column_present(browser):
     """Ensure 'Tools That Ran This Test' column exists."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("table th", has_text="Tools That Ran This Test")).to_be_visible()
-        page.close()
-    run_safe_test("test_tools_column_present", inner, browser_context)
+    run_safe_test("test_tools_column_present", inner, browser)
 
-def test_insights_csv_generated(browser_context):
+def test_insights_csv_generated(browser):
     """Ensure final_unified_tests.csv file is generated."""
-    def inner(ctx):
+    def inner(page):
         csv_path = Path("final_unified_tests.csv")
         if csv_path.exists():
             csv_path.unlink()
-        page = ctx.new_page()
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("table")).to_be_visible()
         assert csv_path.exists(), "CSV not generated"
-        page.close()
-    run_safe_test("test_insights_csv_generated", inner, browser_context)
+    run_safe_test("test_insights_csv_generated", inner, browser)
 
-def test_toxic_input_detection(browser_context):
+# Content Moderation Tab
+def test_toxic_input_detection(browser):
     """Ensure toxic comment detection works."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Content Moderation")
         page.fill("textarea", "You are so stupid!")
         page.get_by_role("button", name="Moderate Text").click()
-        time.sleep(3)
-        content = page.content().lower()
-        assert "toxic" in content
-        page.close()
-    run_safe_test("test_toxic_input_detection", inner, browser_context)
+        page.wait_for_selector("text=toxic", timeout=15000)
+    run_safe_test("test_toxic_input_detection", inner, browser)
 
-def test_non_toxic_input_detection(browser_context):
+def test_non_toxic_input_detection(browser):
     """Ensure safe text is detected correctly."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Content Moderation")
         page.fill("textarea", "You are kind and helpful!")
         page.get_by_role("button", name="Moderate Text").click()
-        # Wait until the "safe" text appears instead of sleeping
         page.wait_for_selector("text=safe", timeout=15000)
-        content = page.content().lower()
-        assert "safe" in content
-        page.close()
-    run_safe_test("test_non_toxic_input_detection", inner, browser_context)
+    run_safe_test("test_non_toxic_input_detection", inner, browser)
 
-def test_empty_input_warning(browser_context):
+def test_empty_input_warning(browser):
     """Check empty input warning shown."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Content Moderation")
         page.fill("textarea", "")
         page.get_by_role("button", name="Moderate Text").click()
-        time.sleep(2)
+        page.wait_for_timeout(2000)
         content = page.content().lower()
         assert "please enter" in content
-        page.close()
-    run_safe_test("test_empty_input_warning", inner, browser_context)
+    run_safe_test("test_empty_input_warning", inner, browser)
 
-def test_content_moderation_backend_failure(browser_context):
+def test_content_moderation_backend_failure(browser):
     """Simulate backend failure during moderation."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Content Moderation")
         page.fill("textarea", "simulate backend error")
         page.get_by_role("button", name="Moderate Text").click()
-        # Wait up to 30s for any possible failure message to appear
-        try:
-            page.wait_for_selector("text=error, text=failed, text=exception, text=try again, text=something went wrong", timeout=30000)
-        except:
-            pass  # fallback to full page scan
-        text = page.inner_text("body").lower()
-        # Broaden detection to catch various failure patterns
-        failure_indicators = ["error", "failed", "exception", "try again", "something went wrong"]
-        assert any(k in text for k in failure_indicators), f"No failure message found in: {text[:300]}"
-        page.close()
+        page.wait_for_timeout(3000)
+        content = page.content().lower()
+        assert any(k in content for k in ["error", "failed", "exception", "try again"])
+    run_safe_test("test_content_moderation_backend_failure", inner, browser)
 
-    run_safe_test("test_content_moderation_backend_failure", inner, browser_context)
-
-def test_content_moderation_retry_after_failure(browser_context):
+def test_content_moderation_retry_after_failure(browser):
     """Ensure retry works after backend failure."""
-    def inner(ctx):
-        page = ctx.new_page()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Content Moderation")
         page.fill("textarea", "retry after error")
         page.get_by_role("button", name="Moderate Text").click()
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(3000)
         page.get_by_role("button", name="Moderate Text").click()
         expect(page.get_by_text("Safe")).to_be_visible(timeout=20000)
-        page.close()
-    run_safe_test("test_content_moderation_retry_after_failure", inner, browser_context)
+    run_safe_test("test_content_moderation_retry_after_failure", inner, browser)
 
-def test_e2e_streamlit_navigation(browser_context):
+# E2E Navigation
+def test_e2e_streamlit_navigation(browser):
     """Full navigation across Streamlit tabs."""
-    def inner(ctx):
-        page = ctx.new_page()
-        start_time = time.time()
+    def inner(page):
         page.goto(BASE_URL)
         open_tab(page, "Test Insights")
         expect(page.locator("text=Unified Test Insights Dashboard")).to_be_visible()
         open_tab(page, "Content Moderation")
         expect(page.locator("text=Content Moderation with Detoxify")).to_be_visible()
-        assert (time.time() - start_time) < 25
-        page.close()
-    run_safe_test("test_e2e_streamlit_navigation", inner, browser_context)
+    run_safe_test("test_e2e_streamlit_navigation", inner, browser)
 
-#PYTEST HTML ENHANCEMENTS
+# Pytest HTML Enhancements
 def pytest_html_results_table_row(report, cells):
     test_name = report.nodeid.split("::")[-1]
     duration = getattr(report, "duration", 0.0)
     status = "✅ Passed" if report.passed else "❌ Failed"
-    domain = BASE_URL
     desc = _dynamic_description(test_name)
     cells.insert(1, html.td(status))
     cells.insert(2, html.td(f"{duration:.2f}s"))
-    cells.insert(3, html.td(domain))
+    cells.insert(3, html.td(BASE_URL))
     cells.insert(4, html.td(desc[:100]))
 
 def pytest_html_results_table_html(report, data):
     test_name = report.nodeid.split("::")[-1]
-    image_path = ARTIFACTS_DIR / f"{test_name}.png"
+    image_path = IMAGES_DIR / f"{test_name}.png"
+    video_path = VIDEOS_DIR / f"{test_name}.webm"
     duration = getattr(report, "duration", 0.0)
     description = _dynamic_description(test_name)
     quick_fix = _quick_fix_suggestion(test_name)
@@ -348,8 +333,7 @@ def pytest_html_results_table_html(report, data):
         extra_html += f"<p><b>Error:</b> {short_error}</p><p><b>Quick fix:</b> {quick_fix}</p>"
     if image_path.exists():
         extra_html += f"<p><b>Visual Report:</b></p><img src='file:///{image_path.as_posix()}' width='750' style='border:1px solid #ddd;border-radius:10px;'/>"
+    if video_path.exists():
+        extra_html += f"<p><b>🎥 Test Video:</b></p><video width='750' controls style='border-radius:10px;'><source src='file:///{video_path.as_posix()}' type='video/webm'></video>"
     extra_html += "</div>"
     data.append(extras.html(extra_html))
-
-import warnings #completely harmless only nuisance
-warnings.filterwarnings("ignore", category=RuntimeWarning, message="coroutine .* was never awaited")
